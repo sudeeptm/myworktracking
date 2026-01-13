@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         String
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  entries      WorkEntry[]
+
+  @@map("users")
+}
+
+model TeamMember {
+  id        String   @id @default(uuid())
+  name      String
+  role      String?
+  team      String?
+  startDate DateTime? @map("start_date")
+  strengths String?
+  goals     String?
+  entries   WorkEntry[]
+
+  @@map("team_members")
+}
+
+model Project {
+  id             String   @id @default(uuid())
+  name           String
+  description    String?
+  ownerId        String?  @map("owner_id")
+  quarter        String?
+  year           Int?
+  goals          String?
+  successMetrics String? @map("success_metrics")
+  owner          TeamMember? @relation(fields: [ownerId], references: [id])
+
+  @@map("projects")
+}
+
+model WorkEntry {
+  id              String   @id @default(uuid())
+  entryDate       DateTime @map("entry_date")
+  startTime       DateTime? @map("start_time")
+  durationMinutes Int?     @map("duration_minutes")
+  type            String
+  title           String
+  details         String?
+  ownerId         String?  @map("owner_id")
+  status          String
+  visibility      String
+  impactLevel     String?  @map("impact_level")
+  impactType      String?  @map("impact_type")
+  impactNotes     String?  @map("impact_notes")
+  links           String[]
+  attachments     String[]
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  updatedBy       String?  @map("updated_by")
+  owner           TeamMember? @relation(fields: [ownerId], references: [id])
+  updatedByUser   User?    @relation(fields: [updatedBy], references: [id])
+  tags            WorkEntryTag[]
+
+  @@map("work_entries")
+}
+
+model Tag {
+  id   String @id @default(uuid())
+  name String @unique
+  entries WorkEntryTag[]
+
+  @@map("tags")
+}
+
+model WorkEntryTag {
+  workEntryId String @map("work_entry_id")
+  tagId       String @map("tag_id")
+  workEntry   WorkEntry @relation(fields: [workEntryId], references: [id])
+  tag         Tag @relation(fields: [tagId], references: [id])
+
+  @@id([workEntryId, tagId])
+  @@map("work_entry_tags")
+}
+
+model ReviewArtifact {
+  id        String   @id @default(uuid())
+  scopeType String   @map("scope_type")
+  scopeId   String?  @map("scope_id")
+  timeframe String
+  content   String
+  entryIds  String[] @map("entry_ids")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("review_artifacts")
+}
